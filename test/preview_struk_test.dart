@@ -624,9 +624,9 @@ void main() {
     expect(receiptText, contains('(Perhitungan Subsidi Unaudited'));
     expect(receiptText, isNot(contains('FootNote')));
     for (final centeredLine in [
-      '3414210',
+      '348888',
       'SPBU SENTRA BISNIS ARTHA',
-      'JL. SENTRA BISNIS ARTHA GADING',
+      'JL. KEBAHAGIAAN NO. 1',
       'Anda mendapat subsidi dari',
       'Subsidi secara bijak.',
     ]) {
@@ -635,7 +635,7 @@ void main() {
     }
     expect(
       receiptLines
-          .firstWhere((text) => text.data == '3414210')
+          .firstWhere((text) => text.data == '348888')
           .style
           ?.fontWeight,
       FontWeight.bold,

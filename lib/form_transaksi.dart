@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 import 'ads_service.dart';
+import 'folder_image_picker.dart';
 import 'preview_struk.dart';
 import 'database/database_helper.dart';
 
@@ -87,12 +88,11 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
 
   // Pengaturan Logo
   double _ukuranLogo = 70.0;
-  String _posisiHeader = 'Tengah';
   String? _customLogoPath; // Menyimpan gambar logo
 
   // Variabel Data
-  List<String> _listSpbu = ['SPBU SENTRA BISNIS ARTHA (3414210)'];
-  String _selectedSpbu = 'SPBU SENTRA BISNIS ARTHA (3414210)';
+  List<String> _listSpbu = ['SPBU MASA DEPAN (348888)'];
+  String _selectedSpbu = 'SPBU MASA DEPAN (348888)';
   List<Map<String, dynamic>> _spbuData = [];
   String _footerText = '';
   final List<int> _listShift = [1, 2, 3];
@@ -167,12 +167,56 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
     super.dispose();
   }
 
-  // Fungsi Memilih Logo dari Galeri HP
+  // Pengguna memilih sumber logo. Akses folder diberikan lewat dialog sistem
+  // (Storage Access Framework), sehingga tidak butuh izin penyimpanan luas.
   Future<void> _pickLogo() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() => _customLogoPath = image.path);
+    final sumber = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Galeri'),
+              onTap: () => Navigator.pop(context, 'galeri'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.folder_open),
+              title: const Text('Telusuri Folder'),
+              onTap: () => Navigator.pop(context, 'file'),
+            ),
+            if (_customLogoPath != null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('Hapus Logo'),
+                onTap: () => Navigator.pop(context, 'hapus'),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (sumber == null || !mounted) return;
+
+    try {
+      String? path;
+      if (sumber == 'galeri') {
+        final image = await ImagePicker().pickImage(
+          source: ImageSource.gallery,
+        );
+        path = image?.path;
+      } else if (sumber == 'file') {
+        path = await FolderImagePickerScreen.pick(context);
+      } else {
+        setState(() => _customLogoPath = null);
+        return;
+      }
+      if (path != null && mounted) setState(() => _customLogoPath = path);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Logo tidak dapat dibuka: $error')),
+      );
     }
   }
 
@@ -278,7 +322,7 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
           estimasiLiter: _estimasiLiter,
           platNomor: _platNomorController.text,
           namaSpbu: _spbuTerpilih?['nama_spbu'] ?? _selectedSpbu.split(' (')[0],
-          kodeSpbu: _spbuTerpilih?['id_spbu'] ?? '3414210',
+          kodeSpbu: _spbuTerpilih?['id_spbu'] ?? '348888',
           alamatSpbu: _spbuTerpilih?['alamat_spbu'] ?? '',
           footerText: _footerText,
           shift: _selectedShift,
@@ -441,19 +485,7 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
                     const SizedBox(width: 8),
                   ],
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: ['Kiri', 'Tengah', 'Kanan'].map((pos) {
-                    bool isSel = _posisiHeader == pos;
-                    return ChoiceChip(
-                      label: Text(pos, style: TextStyle(color: Colors.black)),
-                      selectedColor: const Color(0xFF23B2EE),
-                      selected: isSel,
-                      onSelected: (val) => setState(() => _posisiHeader = pos),
-                    );
-                  }).toList(),
-                ),
-
+                const SizedBox(height: 8),
                 // 2. Data SPBU
                 _buildHeader(Icons.location_on, 'Data SPBU'),
                 DropdownButtonFormField<String>(
@@ -730,14 +762,15 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
             ),
             child: _buildPreviewButton(),
           ),
-          const ColoredBox(
-            color: Colors.white,
-            child: Align(
-              heightFactor: 1,
-              alignment: Alignment.center,
-              child: BannerAdWidget(),
+          if (kShowAds)
+            const ColoredBox(
+              color: Colors.white,
+              child: Align(
+                heightFactor: 1,
+                alignment: Alignment.center,
+                child: BannerAdWidget(),
+              ),
             ),
-          ),
         ],
       ),
     );

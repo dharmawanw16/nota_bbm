@@ -138,7 +138,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ? 'Versi aplikasi tidak tersedia'
                           : packageInfo == null
                           ? 'Memuat versi aplikasi...'
-                          : 'Versi ${packageInfo.version}';
+                          : 'Versi ${packageInfo.version}+${packageInfo.buildNumber}';
                       return Text(
                         versionText,
                         style: const TextStyle(
@@ -215,11 +215,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
               ),
             ),
-      bottomNavigationBar: const Align(
-        heightFactor: 1,
-        alignment: Alignment.center,
-        child: BannerAdWidget(),
-      ),
+      bottomNavigationBar: kShowAds
+          ? const Align(
+              heightFactor: 1,
+              alignment: Alignment.center,
+              child: BannerAdWidget(),
+            )
+          : null,
     );
   }
 

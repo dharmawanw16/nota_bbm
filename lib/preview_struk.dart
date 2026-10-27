@@ -96,8 +96,8 @@ class PreviewStrukScreen extends StatefulWidget {
     this.showHeader = true,
     this.logoSizePercent = 70,
     this.showSubsidi = true,
-    this.kodeSpbu = '3414210',
-    this.alamatSpbu = 'JL. SENTRA BISNIS ARTHA GADING',
+    this.kodeSpbu = '348888',
+    this.alamatSpbu = 'JL. KEBAHAGIAAN NO. 1',
     this.footerText = '',
   });
 
@@ -112,7 +112,8 @@ class _PreviewStrukScreenState extends State<PreviewStrukScreen> {
   static const _exportWidth = 1152;
   static const _jpgPaperMm = 66;
   static const _printZoom = 1.07;
-  static const _printTrimChars = 0.0;
+  // Negatif = margin kiri-kanan dilebarkan sebanyak N karakter per sisi
+  static const _printTrimChars = -0.5;
   // Geser isi struk ke kiri (poin) khusus cetak Bluetooth
   static const _printLeftTrim = 0.0;
   // Geser seluruh isi struk ke kanan (piksel printer) khusus cetak Bluetooth
@@ -126,11 +127,13 @@ class _PreviewStrukScreenState extends State<PreviewStrukScreen> {
       60 * 96 / 25.4 * 1.1 * 1.3 + _fontBoostExtraWidth;
   bool _isPrinting = false;
   bool _isExporting = false;
-  bool _showWatermark = true;
+  bool _showWatermark = kShowAds;
 
   // Iklan reward wajib ditonton; watermark hanya hilang jika iklan selesai.
   // Mengembalikan false jika aksi dibatalkan. Watermark dipulihkan di akhir aksi.
+  // Pada build tanpa iklan, struk langsung dibuat tanpa watermark.
   Future<bool> _prepareReceipt() async {
+    if (!kShowAds) return true;
     final result = await AdsService.showRewarded();
     if (!mounted) return false;
     if (result == AdResult.dismissed) {
@@ -146,7 +149,7 @@ class _PreviewStrukScreenState extends State<PreviewStrukScreen> {
   }
 
   void _restoreWatermark() {
-    if (mounted) setState(() => _showWatermark = true);
+    if (mounted) setState(() => _showWatermark = kShowAds);
   }
 
   // {subsidi} pada footer diganti dengan total subsidi pemerintah

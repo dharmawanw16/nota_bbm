@@ -21,7 +21,7 @@ class DatabaseHelper {
     // Buka database, jika belum ada maka buat baru (onCreate)
     return await openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: _createDB,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -51,9 +51,26 @@ class DatabaseHelper {
         if (oldVersion < 7) {
           await _ensurePertamaxGreen(db);
         }
+        if (oldVersion < 8) {
+          await db.delete('spbu', where: 'id_spbu = ?', whereArgs: ['3414210']);
+          if ((await db.query('spbu', limit: 1)).isEmpty) {
+            await db.insert('spbu', _spbuDefault);
+          }
+          await db.update('pengaturan', {
+            'id_spbu': _spbuDefault['id_spbu'],
+            'nama_spbu': _spbuDefault['nama_spbu'],
+            'alamat_spbu': _spbuDefault['alamat_spbu'],
+          });
+        }
       },
     );
   }
+
+  static const Map<String, Object?> _spbuDefault = {
+    'id_spbu': '348888',
+    'nama_spbu': 'SPBU MASA DEPAN',
+    'alamat_spbu': 'JL. KEBAHAGIAAN NO. 1',
+  };
 
   Future<void> _ensurePertamaxGreen(Database db) async {
     final bbm = await db.query(
@@ -243,18 +260,12 @@ class DatabaseHelper {
     // Insert data pengaturan default
     await db.insert('pengaturan', {
       'id': 1,
-      'id_spbu': '3414210',
-      'nama_spbu': 'SPBU KITA',
-      'alamat_spbu': 'Jl. Raya No. 1',
+      ..._spbuDefault,
       'teks_footer': 'Terima kasih telah mengisi BBM',
     });
 
     await _createSpbuTable(db);
-    await db.insert('spbu', {
-      'id_spbu': '3414210',
-      'nama_spbu': 'SPBU KITA',
-      'alamat_spbu': 'Jl. Raya No. 1',
-    });
+    await db.insert('spbu', _spbuDefault);
     await _createFooterTable(db);
     await _isiFooterSubsidi(db);
   }

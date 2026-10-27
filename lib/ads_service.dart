@@ -6,6 +6,9 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 enum AdResult { rewarded, dismissed, unavailable }
 
+// Diatur lewat --dart-define=SHOW_ADS=false untuk build tanpa iklan.
+const bool kShowAds = bool.fromEnvironment('SHOW_ADS', defaultValue: true);
+
 class AdsService {
   static const _androidBannerUnitId = 'ca-app-pub-1187560780589863/7852149755';
   static const _androidRewardedUnitId =
@@ -38,7 +41,7 @@ class AdsService {
           defaultTargetPlatform == TargetPlatform.iOS);
 
   static Future<void> init() async {
-    if (!_supported) return;
+    if (!kShowAds || !_supported) return;
     await MobileAds.instance.initialize();
   }
 
@@ -88,7 +91,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   @override
   void initState() {
     super.initState();
-    if (!AdsService._supported) return;
+    if (!kShowAds || !AdsService._supported) return;
     _ad = BannerAd(
       adUnitId: AdsService.bannerUnitId,
       size: AdSize.banner,
