@@ -14,16 +14,6 @@ class PrivacyPolicyScreen extends StatelessWidget {
           'mengirim isi data tersebut ke server milik pengembang.',
     ),
     (
-      title: 'Iklan',
-      body:
-          'Aplikasi menggunakan Google Mobile Ads (AdMob). Google dapat '
-          'memproses informasi perangkat atau pengenal iklan, interaksi '
-          'dengan iklan, dan data diagnostik untuk menayangkan serta '
-          'mengukur iklan dan mencegah penyalahgunaan, sesuai pengaturan '
-          'perangkat dan kebijakan Google. Informasi lebih lanjut tersedia '
-          'di policies.google.com/privacy.',
-    ),
-    (
       title: 'Berbagi file dan pencetakan',
       body:
           'Jika Anda memilih membagikan nota, aplikasi membuat file PDF atau '
@@ -38,14 +28,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           'Data lokal tersimpan sampai Anda menghapus data aplikasi melalui '
           'pengaturan Android atau menghapus aplikasi. File yang sudah '
           'dibagikan atau disimpan di luar NotaBBM perlu dihapus dari lokasi '
-          'atau aplikasi tujuan secara terpisah. Data iklan yang diproses '
-          'Google tunduk pada pengaturan dan kebijakan Google.',
-    ),
-    (
-      title: 'Keamanan dan anak-anak',
-      body:
-          'Data lokal berada di penyimpanan privat aplikasi pada perangkat. '
-          'Aplikasi ini tidak ditujukan untuk anak di bawah 13 tahun.',
+          'atau aplikasi tujuan secara terpisah.',
     ),
     (
       title: 'Perubahan kebijakan',
