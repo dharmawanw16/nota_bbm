@@ -13,8 +13,6 @@ import 'package:file_picker/file_picker.dart';
 
 import 'ads_service.dart';
 
-const defaultReceiptLogoAsset = 'assets/images/pertamina_logo.png';
-
 enum _ReceiptFileFormat { pdf, jpg }
 
 class _WatermarkPainter extends CustomPainter {
@@ -392,26 +390,17 @@ class _PreviewStrukScreenState extends State<PreviewStrukScreen> {
   }
 
   Widget _buildReceiptLogo(double availableWidth) {
-    if (!widget.showHeader) return const SizedBox.shrink();
-
     final logoPath = widget.customLogoPath;
-    final image = logoPath == null
-        ? Image.asset(
-            defaultReceiptLogoAsset,
-            fit: BoxFit.contain,
-            errorBuilder: (_, _, _) => const Text(
-              'Logo tidak dapat dimuat',
-              style: TextStyle(fontSize: 10, color: Colors.red),
-            ),
-          )
-        : Image.file(
-            File(logoPath),
-            fit: BoxFit.contain,
-            errorBuilder: (_, _, _) => const Text(
-              'Logo tidak dapat dimuat',
-              style: TextStyle(fontSize: 10, color: Colors.red),
-            ),
-          );
+    if (!widget.showHeader || logoPath == null) return const SizedBox.shrink();
+
+    final image = Image.file(
+      File(logoPath),
+      fit: BoxFit.contain,
+      errorBuilder: (_, _, _) => const Text(
+        'Logo tidak dapat dimuat',
+        style: TextStyle(fontSize: 10, color: Colors.red),
+      ),
+    );
 
     final logoWidth = (availableWidth * (widget.logoSizePercent / 200) * 1.2676)
         .clamp(0.0, availableWidth);

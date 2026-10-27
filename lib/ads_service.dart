@@ -6,11 +6,31 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 enum AdResult { rewarded, dismissed, unavailable }
 
-// ID di bawah adalah ID uji Google. Ganti dengan ID AdMob asli sebelum rilis
-// (termasuk APPLICATION_ID di AndroidManifest.xml).
 class AdsService {
-  static const bannerUnitId = 'ca-app-pub-3940256099942544/6300978111';
-  static const rewardedUnitId = 'ca-app-pub-3940256099942544/5224354917';
+  static const _androidBannerUnitId = 'ca-app-pub-1187560780589863/7852149755';
+  static const _androidRewardedUnitId =
+      'ca-app-pub-1187560780589863/5086385611';
+  static const _androidBannerTestUnitId =
+      'ca-app-pub-3940256099942544/6300978111';
+  static const _androidRewardedTestUnitId =
+      'ca-app-pub-3940256099942544/5224354917';
+  static const _iosBannerTestUnitId = 'ca-app-pub-3940256099942544/2934735716';
+  static const _iosRewardedTestUnitId =
+      'ca-app-pub-3940256099942544/1712485313';
+
+  static String get bannerUnitId {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return _iosBannerTestUnitId;
+    }
+    return kDebugMode ? _androidBannerTestUnitId : _androidBannerUnitId;
+  }
+
+  static String get rewardedUnitId {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return _iosRewardedTestUnitId;
+    }
+    return kDebugMode ? _androidRewardedTestUnitId : _androidRewardedUnitId;
+  }
 
   static bool get _supported =>
       !kIsWeb &&

@@ -586,18 +586,8 @@ void main() {
     expect(find.text('Preview Struk'), findsOneWidget);
     expect(find.text('Pilih Template'), findsNothing);
     expect(find.text('Template 7 (Subsidi)'), findsNothing);
-    final logo = tester.widget<Image>(find.byType(Image).first);
-    expect(logo.image, isA<AssetImage>());
-    expect((logo.image as AssetImage).assetName, defaultReceiptLogoAsset);
-    expect(
-      tester.getSize(find.byKey(const ValueKey('receipt-logo'))).width,
-      closeTo(
-        (tester.getSize(find.byKey(const ValueKey('receipt-preview'))).width -
-                16) *
-            0.4437,
-        1,
-      ),
-    );
+    expect(find.byKey(const ValueKey('receipt-logo')), findsNothing);
+    expect(find.byType(Image), findsNothing);
     expect(find.textContaining('SPBU SENTRA BISNIS ARTHA'), findsOneWidget);
     expect(find.textContaining('Dibayar Konsumen'), findsOneWidget);
     expect(find.text('Cetak Struk'), findsOneWidget);

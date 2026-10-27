@@ -4,10 +4,9 @@
         android:label="NotaBBM"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-        <!-- ID aplikasi uji AdMob; ganti dengan ID asli sebelum rilis -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="${admobApplicationId}"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

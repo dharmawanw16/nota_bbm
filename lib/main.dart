@@ -1,6 +1,7 @@
 import 'ads_service.dart';
 import 'form_transaksi.dart';
 import 'menu_screens.dart';
+import 'privacy_policy_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -165,6 +166,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Icons.receipt_long,
               'Footer Nota',
               () => const FooterNotaScreen(),
+            ),
+            _menuItem(
+              Icons.privacy_tip_outlined,
+              'Kebijakan Privasi',
+              () => const PrivacyPolicyScreen(),
             ),
           ],
         ),

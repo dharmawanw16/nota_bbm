@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'dart:io';
 
+import 'ads_service.dart';
 import 'preview_struk.dart';
 import 'database/database_helper.dart';
 
@@ -376,9 +377,9 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
                                 File(_customLogoPath!),
                                 fit: BoxFit.contain,
                               )
-                            : Image.asset(
-                                defaultReceiptLogoAsset,
-                                fit: BoxFit.contain,
+                            : const Icon(
+                                Icons.add_photo_alternate_outlined,
+                                color: Colors.grey,
                               ),
                       ),
                     ),
@@ -712,47 +713,64 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.fromLTRB(32, 16, 32, 16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 10,
-              offset: Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Material(
-          key: const ValueKey('preview-column'),
-          color: const Color(0xFF23B2EE),
-          borderRadius: BorderRadius.circular(12),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: _openPreview,
-            splashColor: Colors.white24,
-            highlightColor: Colors.white12,
-            child: const SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.print, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text(
-                      'Preview',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(32, 16, 32, 16),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: Offset(0, -2),
                 ),
-              ),
+              ],
+            ),
+            child: _buildPreviewButton(),
+          ),
+          const ColoredBox(
+            color: Colors.white,
+            child: Align(
+              heightFactor: 1,
+              alignment: Alignment.center,
+              child: BannerAdWidget(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreviewButton() {
+    return Material(
+      key: const ValueKey('preview-column'),
+      color: const Color(0xFF23B2EE),
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: _openPreview,
+        splashColor: Colors.white24,
+        highlightColor: Colors.white12,
+        child: const SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.print, color: Colors.black),
+                SizedBox(width: 8),
+                Text(
+                  'Preview',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
