@@ -168,6 +168,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               () => const FooterNotaScreen(),
             ),
             _menuItem(
+              Icons.history,
+              'History Cetak Struk',
+              () => const RiwayatStrukScreen(),
+            ),
+            _menuItem(
+              Icons.backup,
+              'Backup & Pemulihan Data',
+              () => const BackupRestoreScreen(),
+            ),
+            _menuItem(
               Icons.privacy_tip_outlined,
               'Kebijakan Privasi',
               () => const PrivacyPolicyScreen(),

@@ -1,8 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-
-import 'dart:io';
 
 import 'ads_service.dart';
 import 'folder_image_picker.dart';
@@ -82,7 +82,6 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
   final TextEditingController _menitController = TextEditingController();
   final TextEditingController _detikController = TextEditingController();
 
-  double _estimasiLiter = 0.0;
   int? _selectedNominal;
   late DateTime _tanggalTransaksi;
 
@@ -135,8 +134,17 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
       ops = await db.getOperator();
       spbu = await db.getSpbu();
       footer = await db.getFooterBbm(widget.namaBbm);
-    } catch (_) {
-      return; // database tidak tersedia, pakai nilai bawaan
+    } catch (error, stackTrace) {
+      debugPrint('Gagal memuat pengaturan transaksi: $error\n$stackTrace');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Pengaturan transaksi gagal dimuat. Nilai bawaan digunakan.',
+          ),
+        ),
+      );
+      return;
     }
     if (!mounted) return;
     setState(() {
@@ -161,6 +169,11 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
 
   @override
   void dispose() {
+    _jumlahRpController.dispose();
+    _platNomorController.dispose();
+    _hargaNonSubsidiController.dispose();
+    _subsidiController.dispose();
+    _idTransaksiController.dispose();
     _jamController.dispose();
     _menitController.dispose();
     _detikController.dispose();
@@ -227,7 +240,7 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (tanggal != null) {
+    if (tanggal != null && mounted) {
       setState(() => _tanggalTransaksi = tanggal);
     }
   }
@@ -273,30 +286,31 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
     );
   }
 
-  void _hitungLiter(String value) {
-    _selectedNominal = null;
-    if (value.isNotEmpty) {
-      int jumlahRp = int.parse(value.replaceAll(RegExp(r'[^0-9]'), ''));
-      setState(() => _estimasiLiter = jumlahRp / widget.hargaPerLiter);
-    } else {
-      setState(() => _estimasiLiter = 0.0);
-    }
-  }
-
   void _setNominal(int nominal) {
     final formatted = _formatThousands(nominal.toString());
     _jumlahRpController.value = TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
     );
-    setState(() {
-      _selectedNominal = nominal;
-      _estimasiLiter = nominal / widget.hargaPerLiter;
-    });
+    setState(() => _selectedNominal = nominal);
   }
 
-  void _openPreview() {
-    if (_jumlahRpController.text.isEmpty || _estimasiLiter <= 0) return;
+  Future<void> _openPreview() async {
+    if (widget.hargaPerLiter <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harga BBM harus lebih besar dari 0.')),
+      );
+      return;
+    }
+    final totalUang = int.tryParse(
+      _jumlahRpController.text.replaceAll(RegExp(r'[^0-9]'), ''),
+    );
+    if (totalUang == null || totalUang <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Masukkan jumlah pembayaran yang valid.')),
+      );
+      return;
+    }
     final waktu = _waktuTransaksi();
     if (waktu == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -308,9 +322,20 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
       );
       return;
     }
-    final totalUang = int.parse(
-      _jumlahRpController.text.replaceAll(RegExp(r'[^0-9]'), ''),
-    );
+    final estimasiLiter = totalUang / widget.hargaPerLiter;
+
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      await DatabaseHelper.instance.tambahTransaksi(
+        idTransaksi: _idTransaksiController.text,
+        namaBbm: widget.namaBbm,
+        jumlahLiter: estimasiLiter,
+        totalBayar: totalUang,
+        platNomor: _platNomorController.text,
+        waktuTransaksi: waktu,
+      );
+    }
+
+    if (!mounted) return;
 
     Navigator.push(
       context,
@@ -319,7 +344,7 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
           namaBbm: widget.namaBbm,
           hargaPerLiter: widget.hargaPerLiter,
           totalBayar: totalUang,
-          estimasiLiter: _estimasiLiter,
+          estimasiLiter: estimasiLiter,
           platNomor: _platNomorController.text,
           namaSpbu: _spbuTerpilih?['nama_spbu'] ?? _selectedSpbu.split(' (')[0],
           kodeSpbu: _spbuTerpilih?['id_spbu'] ?? '348888',
@@ -584,6 +609,9 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
                         controller: _idTransaksiController,
                         style: const TextStyle(color: _inputTextColor),
                         keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.numbers),
                           border: OutlineInputBorder(
@@ -667,7 +695,7 @@ class _FormTransaksiScreenState extends State<FormTransaksiScreen> {
                   style: const TextStyle(color: _inputTextColor),
                   keyboardType: TextInputType.number,
                   inputFormatters: [_ThousandsSeparatorInputFormatter()],
-                  onChanged: _hitungLiter,
+                  onChanged: (_) => setState(() => _selectedNominal = null),
                   decoration: InputDecoration(
                     labelText: 'Jumlah (Rp)',
                     prefixIcon: const Icon(

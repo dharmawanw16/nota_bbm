@@ -21,7 +21,7 @@ class DatabaseHelper {
     // Buka database, jika belum ada maka buat baru (onCreate)
     return await openDatabase(
       path,
-      version: 8,
+      version: 9,
       onCreate: _createDB,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -61,6 +61,18 @@ class DatabaseHelper {
             'nama_spbu': _spbuDefault['nama_spbu'],
             'alamat_spbu': _spbuDefault['alamat_spbu'],
           });
+        }
+        if (oldVersion < 9) {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS transaksi (
+              id_transaksi TEXT PRIMARY KEY,
+              nama_bbm TEXT NOT NULL,
+              jumlah_liter REAL NOT NULL,
+              total_bayar INTEGER NOT NULL,
+              plat_nomor TEXT,
+              waktu_transaksi TEXT NOT NULL
+            )
+          ''');
         }
       },
     );
@@ -362,5 +374,118 @@ class DatabaseHelper {
   Future<void> simpanPengaturan(Map<String, Object?> values) async {
     final db = await instance.database;
     await db.update('pengaturan', values, where: 'id = 1');
+  }
+
+  // ==========================================
+  // RIWAYAT TRANSAKSI
+  // ==========================================
+  Future<void> tambahTransaksi({
+    required String idTransaksi,
+    required String namaBbm,
+    required double jumlahLiter,
+    required int totalBayar,
+    String? platNomor,
+    required String waktuTransaksi,
+  }) async {
+    final db = await instance.database;
+    await db.insert(
+      'transaksi',
+      {
+        'id_transaksi': idTransaksi,
+        'nama_bbm': namaBbm,
+        'jumlah_liter': jumlahLiter,
+        'total_bayar': totalBayar,
+        'plat_nomor': platNomor,
+        'waktu_transaksi': waktuTransaksi,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getRiwayatTransaksi() async {
+    final db = await instance.database;
+    return await db.query('transaksi', orderBy: 'rowid DESC');
+  }
+
+  Future<void> hapusTransaksi(String idTransaksi) async {
+    final db = await instance.database;
+    await db.delete('transaksi', where: 'id_transaksi = ?', whereArgs: [idTransaksi]);
+  }
+
+  Future<void> hapusSemuaTransaksi() async {
+    final db = await instance.database;
+    await db.delete('transaksi');
+  }
+
+  // ==========================================
+  // BACKUP & RESTORE LOKAL
+  // ==========================================
+  Future<Map<String, dynamic>> exportData() async {
+    final db = await instance.database;
+    final operator = await db.query('operator');
+    final spbu = await db.query('spbu');
+    final footerBbm = await db.query('footer_bbm');
+    final pengaturan = await db.query('pengaturan');
+    final bbm = await db.query('bbm');
+    final transaksi = await db.query('transaksi');
+
+    return {
+      'version': 1,
+      'timestamp': DateTime.now().toIso8601String(),
+      'operator': operator,
+      'spbu': spbu,
+      'footer_bbm': footerBbm,
+      'pengaturan': pengaturan,
+      'bbm': bbm,
+      'transaksi': transaksi,
+    };
+  }
+
+  Future<void> importData(Map<String, dynamic> data) async {
+    final db = await instance.database;
+    await db.transaction((txn) async {
+      await txn.delete('operator');
+      await txn.delete('spbu');
+      await txn.delete('footer_bbm');
+      await txn.delete('pengaturan');
+      await txn.delete('bbm');
+      await txn.delete('transaksi');
+
+      if (data['operator'] is List) {
+        for (final item in data['operator']) {
+          await txn.insert('operator', Map<String, Object?>.from(item));
+        }
+      }
+
+      if (data['spbu'] is List) {
+        for (final item in data['spbu']) {
+          await txn.insert('spbu', Map<String, Object?>.from(item));
+        }
+      }
+
+      if (data['footer_bbm'] is List) {
+        for (final item in data['footer_bbm']) {
+          await txn.insert('footer_bbm', Map<String, Object?>.from(item));
+        }
+      }
+
+      if (data['pengaturan'] is List) {
+        for (final item in data['pengaturan']) {
+          await txn.insert('pengaturan', Map<String, Object?>.from(item));
+        }
+      }
+
+      if (data['bbm'] is List) {
+        for (final item in data['bbm']) {
+          await txn.insert('bbm', Map<String, Object?>.from(item));
+        }
+      }
+
+      if (data['transaksi'] is List) {
+        for (final item in data['transaksi']) {
+          await txn.insert('transaksi', Map<String, Object?>.from(item));
+        }
+      }
+    });
   }
 }

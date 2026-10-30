@@ -1,4 +1,4 @@
-name: mini_pom
+name: nota_bbm
 description: "NotaBBM - Aplikasi transaksi dan struk BBM."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.

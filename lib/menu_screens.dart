@@ -1,7 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'database/database_helper.dart';
+import 'preview_struk.dart';
 
 const _biru = Color(0xFF23B2EE);
 
@@ -591,3 +596,329 @@ class _PengaturanPrinterScreenState extends State<PengaturanPrinterScreen> {
     );
   }
 }
+
+// ---------------- History Cetak Struk ----------------
+class RiwayatStrukScreen extends StatefulWidget {
+  const RiwayatStrukScreen({super.key});
+
+  @override
+  State<RiwayatStrukScreen> createState() => _RiwayatStrukScreenState();
+}
+
+class _RiwayatStrukScreenState extends State<RiwayatStrukScreen> {
+  List<Map<String, dynamic>> _riwayat = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _muat();
+  }
+
+  Future<void> _muat() async {
+    setState(() => _loading = true);
+    final data = await DatabaseHelper.instance.getRiwayatTransaksi();
+    if (mounted) {
+      setState(() {
+        _riwayat = data;
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _lihatStruk(Map<String, dynamic> item) async {
+    final pengaturan = await DatabaseHelper.instance.getPengaturan();
+    final footer = await DatabaseHelper.instance.getFooterBbm(
+      item['nama_bbm'] as String,
+    );
+    final bbmList = await DatabaseHelper.instance.getSemuaBBM();
+    if (!mounted) return;
+    final bbm = bbmList.firstWhere(
+      (b) =>
+          b['nama_bbm'].toString().toLowerCase() ==
+          (item['nama_bbm'] as String).toLowerCase(),
+      orElse: () => {'harga_per_liter': 10000},
+    );
+    final hargaPerLiter = (bbm['harga_per_liter'] as num?)?.toInt() ?? 10000;
+    final totalBayar = (item['total_bayar'] as num?)?.toInt() ?? 0;
+    final estimasiLiter =
+        (item['jumlah_liter'] as num?)?.toDouble() ??
+        (totalBayar / hargaPerLiter);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PreviewStrukScreen(
+          namaBbm: item['nama_bbm'] ?? 'BBM',
+          hargaPerLiter: hargaPerLiter,
+          totalBayar: totalBayar,
+          estimasiLiter: estimasiLiter,
+          platNomor: item['plat_nomor'] ?? '',
+          namaSpbu: pengaturan['nama_spbu'] ?? 'SPBU MASA DEPAN',
+          kodeSpbu: pengaturan['id_spbu'] ?? '348888',
+          alamatSpbu: pengaturan['alamat_spbu'] ?? '',
+          footerText: footer,
+          shift: 1,
+          pompa: 1,
+          tanggalWaktu: item['waktu_transaksi'] ?? '',
+          namaOperator: '-',
+          idTransaksi: item['id_transaksi'] ?? '',
+          showSubsidi:
+              (item['nama_bbm'] as String).toLowerCase() == 'pertalite',
+          subsidiPemerintah:
+              (item['nama_bbm'] as String).toLowerCase() == 'pertalite'
+                  ? (totalBayar * 0.2).round()
+                  : null,
+          hargaNonSubsidi:
+              (item['nama_bbm'] as String).toLowerCase() == 'pertalite'
+                  ? hargaPerLiter + 2000
+                  : null,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: _appBar('History Cetak Struk'),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _riwayat.isEmpty
+          ? const Center(child: Text('Belum ada history cetak struk'))
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
+                        icon: const Icon(
+                          Icons.delete_sweep,
+                          color: Colors.red,
+                        ),
+                        label: const Text(
+                          'Hapus Semua',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Hapus Semua History'),
+                              content: const Text(
+                                'Yakin ingin menghapus seluruh history cetak struk?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Batal'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text(
+                                    'Hapus',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            await DatabaseHelper.instance
+                                .hapusSemuaTransaksi();
+                            _muat();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: _riwayat.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (_, i) {
+                      final item = _riwayat[i];
+                      return ListTile(
+                        leading: const Icon(
+                          Icons.receipt,
+                          color: Color(0xFF23B2EE),
+                        ),
+                        title: Text(
+                          '${item['nama_bbm']} - Rp ${item['total_bayar']}',
+                        ),
+                        subtitle: Text(
+                          'ID: ${item['id_transaksi']} | ${item['jumlah_liter']} L\nPlat: ${item['plat_nomor'] ?? '-'}\nWaktu: ${item['waktu_transaksi']}',
+                        ),
+                        isThreeLine: true,
+                        onTap: () => _lihatStruk(item),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            await DatabaseHelper.instance.hapusTransaksi(
+                              item['id_transaksi'] as String,
+                            );
+                            _muat();
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+// ---------------- Backup & Pemulihan Data ----------------
+class BackupRestoreScreen extends StatefulWidget {
+  const BackupRestoreScreen({super.key});
+
+  @override
+  State<BackupRestoreScreen> createState() => _BackupRestoreScreenState();
+}
+
+class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
+  bool _processing = false;
+
+  Future<void> _backupData() async {
+    setState(() => _processing = true);
+    try {
+      final data = await DatabaseHelper.instance.exportData();
+      final jsonString = const JsonEncoder.withIndent('  ').convert(data);
+
+      final result = await FilePicker.saveFile(
+        dialogTitle: 'Simpan Backup Data NotaBBM',
+        fileName:
+            'notabbm_backup_${DateTime.now().millisecondsSinceEpoch}.json',
+        bytes: utf8.encode(jsonString),
+      );
+
+      if (result != null) {
+        if (mounted) _snack(context, 'Backup berhasil disimpan ke file.');
+      } else {
+        await Share.share(jsonString, subject: 'Backup Data NotaBBM');
+      }
+    } catch (e) {
+      if (mounted) _snack(context, 'Gagal backup data: $e');
+    } finally {
+      if (mounted) setState(() => _processing = false);
+    }
+  }
+
+  Future<void> _restoreData() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Pulihkan Data (Restore)'),
+        content: const Text(
+          'Memulihkan data akan mengganti data Nama Operator, Data SPBU, Footer Nota, dan data aplikasi saat ini dengan data dari file backup. Lanjutkan?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Pulihkan',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _processing = true);
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result.isNotEmpty && result.single.path != null) {
+        final file = File(result.single.path!);
+        final jsonString = await file.readAsString();
+        final data = jsonDecode(jsonString) as Map<String, dynamic>;
+
+        await DatabaseHelper.instance.importData(data);
+        if (mounted) {
+          _snack(context, 'Data berhasil dipulihkan!');
+        }
+      }
+    } catch (e) {
+      if (mounted) _snack(context, 'Gagal memulihkan data: $e');
+    } finally {
+      if (mounted) setState(() => _processing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: _appBar('Backup & Pemulihan Data'),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: _processing
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Cadangkan atau Pulihkan Data secara Lokal',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Fitur ini mencadangkan data penting Anda secara lokal ke perangkat:\n'
+                    '• Nama Operator\n'
+                    '• Data SPBU\n'
+                    '• Footer Nota\n'
+                    '• Harga BBM & History Transaksi',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _biru,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    icon: const Icon(Icons.backup),
+                    label: const Text(
+                      'Backup Data (Simpan ke File JSON)',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    onPressed: _backupData,
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    icon: const Icon(Icons.restore),
+                    label: const Text(
+                      'Pulihkan Data (Restore dari File)',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    onPressed: _restoreData,
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
