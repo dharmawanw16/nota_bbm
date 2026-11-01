@@ -76,7 +76,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       leading: Icon(icon),
       title: Text(title),
       onTap: () async {
-        // Drawer dibiarkan terbuka agar tombol kembali mengembalikan ke Preferensi Nota
+        // Drawer dibiarkan terbuka agar tombol kembali mengembalikan ke Pengaturan
         await Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => page()),
@@ -122,7 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    'Preferensi Nota',
+                    'Pengaturan',
                     style: TextStyle(
                       color: Colors.black,
                       fontSize: 24,
@@ -147,6 +147,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       );
                     },
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Karya Tunggal Apps',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
